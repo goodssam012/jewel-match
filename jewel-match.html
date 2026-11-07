@@ -49,7 +49,7 @@
     <button id="newBtn">🔄 새 게임</button>
     <button id="soundBtn">🔊 소리</button>
   </div>
-  <div class="help">보석을 클릭하거나 드래그해서 옆 보석과 바꾸세요. 같은 보석 3개 이상을 한 줄로, 또는 2×2 사각형으로!</div>
+  <div class="help">보석을 클릭하거나 드래그해서 옆 보석과 바꾸세요. 같은 보석 3개 이상을 한 줄로!</div>
 </div>
 
 <script>
@@ -168,8 +168,7 @@ function makeTypes() {
         let v;
         do { v = rand(); } while (
           (c >= 2 && t[r][c - 1] === v && t[r][c - 2] === v) ||
-          (r >= 2 && t[r - 1][c] === v && t[r - 2][c] === v) ||
-          (r >= 1 && c >= 1 && t[r - 1][c] === v && t[r][c - 1] === v && t[r - 1][c - 1] === v));
+          (r >= 2 && t[r - 1][c] === v && t[r - 2][c] === v));
         t[r].push(v);
       }
     }
@@ -183,14 +182,7 @@ function matchAt(t, r, c) {
   for (let k = c + 1; k < N && t[r][k] === v; k++) h++;
   for (let k = r - 1; k >= 0 && t[k][c] === v; k--) w++;
   for (let k = r + 1; k < N && t[k][c] === v; k++) w++;
-  if (h >= 3 || w >= 3) return true;
-  // 이 칸을 포함하는 2x2 사각형 검사
-  for (const [dr, dc] of [[0, 0], [0, -1], [-1, 0], [-1, -1]]) {
-    const r0 = r + dr, c0 = c + dc;
-    if (r0 < 0 || c0 < 0 || r0 + 1 >= N || c0 + 1 >= N) continue;
-    if (t[r0][c0] === v && t[r0][c0 + 1] === v && t[r0 + 1][c0] === v && t[r0 + 1][c0 + 1] === v) return true;
-  }
-  return false;
+  return h >= 3 || w >= 3;
 }
 function findMove(t = grid.map(row => row.map(g => g.type))) {
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
@@ -226,15 +218,6 @@ function findMatches() {
       r = e;
     }
   }
-  // 2x2 사각형
-  for (let r = 0; r + 1 < N; r++) for (let c = 0; c + 1 < N; c++) {
-    const t = grid[r][c].type;
-    if (grid[r][c + 1].type === t && grid[r + 1][c].type === t && grid[r + 1][c + 1].type === t) {
-      const g = [grid[r][c], grid[r][c + 1], grid[r + 1][c], grid[r + 1][c + 1]];
-      g.square = true;
-      groups.push(g);
-    }
-  }
   const set = new Set();
   groups.forEach(g => g.forEach(x => set.add(x)));
   return { groups, set };
@@ -250,11 +233,11 @@ function swapCells(a, b) {
 function clearMatches(m, combo) {
   let gained = 0;
   for (const g of m.groups) {
-    const base = g.square ? 100 : g.length === 3 ? 30 : g.length === 4 ? 90 : g.length * 50;
+    const base = g.length === 3 ? 30 : g.length === 4 ? 90 : g.length * 50;
     const pts = base * combo * level;
     gained += pts;
     const cx = g.reduce((s, x) => s + x.c, 0) / g.length, cy = g.reduce((s, x) => s + x.r, 0) / g.length;
-    floaters.push({ x: (cx + .5) * S, y: (cy + .5) * S, text: (g.square ? '사각형! +' : '+') + pts, life: 1, color: COLORS[g[0].type][0] });
+    floaters.push({ x: (cx + .5) * S, y: (cy + .5) * S, text: '+' + pts, life: 1, color: COLORS[g[0].type][0] });
   }
   if (combo > 1) floaters.push({ x: N * S / 2, y: N * S / 2, text: `콤보 x${combo}!`, life: 1.2, color: '#ffcf4a', big: true });
   for (const g of m.set) {
